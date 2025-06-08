@@ -178,7 +178,7 @@
             try {
                 // --- Call our own backend endpoint ---
                 // This endpoint will securely call the OpenAI API.
-                const response = await fetch('/api/openai', {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
