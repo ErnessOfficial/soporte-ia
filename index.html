@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tus Palabras Urgentes - Apoyo Emocional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A2342; /* Azul oscuro principal */
+            color: #F3F4F6; /* Gris claro para texto general */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            overflow-x: hidden;
+        }
+        .app-container {
+            background-color: #001F3F; /* Azul oscuro secundario */
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 6px 6px rgba(0, 0, 0, 0.25);
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .app-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #FFDB58; /* Mostaza para el título */
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .app-subtitle {
+            font-size: 1rem;
+            color: #D1D5DB; /* Gris medio para subtítulo */
+            margin-bottom: 2rem;
+            text-align: center;
+            line-height: 1.6;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid #FFDB58; /* Borde mostaza */
+            background-color: #0A2342; /* Azul oscuro para el fondo del textarea */
+            color: #F3F4F6; /* Texto claro */
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            resize: vertical;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #FFC300; /* Mostaza más brillante al enfocar */
+            box-shadow: 0 0 0 3px rgba(255, 219, 88, 0.3);
+        }
+        .submit-button {
+            background-color: #FFDB58; /* Mostaza */
+            color: #0A2342; /* Texto azul oscuro */
+            padding: 0.85rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(255, 219, 88, 0.2);
+            width: 100%;
+        }
+        .submit-button:hover {
+            background-color: #FFC300; /* Mostaza más brillante */
+            transform: translateY(-2px);
+        }
+        .submit-button:disabled {
+            background-color: #A0522D; /* Un mostaza apagado o marrón para deshabilitado */
+            color: #6B7280;
+            cursor: not-allowed;
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .response-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: #0A2342; /* Azul oscuro */
+            border-radius: 0.5rem;
+            border: 1px solid #FFDB58; /* Borde mostaza sutil */
+            min-height: 100px;
+            display: none; /* Oculto por defecto */
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out, display 0s 0.5s;
+        }
+        .response-container.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .response-container p {
+            color: #E5E7EB; /* Texto gris muy claro */
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); /* Borde claro semitransparente */
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border-left-color: #FFDB58; /* Mostaza */
+            animation: spin 1s ease infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            color: #FCA5A5; /* Rojo claro para errores */
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1 class="app-title">Tus Palabras Urgentes</h1>
+        <p class="app-subtitle">
+            Este es un espacio seguro para expresar tus inquietudes emocionales. Escribe tu pregunta o pensamiento, y recibe una reflexión de apoyo.
+        </p>
+        
+        <textarea id="userQuery" placeholder="Escribe aquí tu pregunta o cómo te sientes..."></textarea>
+        
+        <button id="submitQueryButton" class="submit-button">Consulta Tus Palabras Urgentes</button>
+        
+        <div id="aiResponseContainer" class="response-container">
+            <div id="loadingSpinner" class="loading-spinner" style="display: none;"></div>
+            <p id="aiResponse"></p>
+        </div>
+    </div>
+
+    <script>
+        const userQueryTextarea = document.getElementById('userQuery');
+        const submitQueryButton = document.getElementById('submitQueryButton');
+        const aiResponseContainer = document.getElementById('aiResponseContainer');
+        const aiResponseElement = document.getElementById('aiResponse');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        submitQueryButton.addEventListener('click', async () => {
+            const userQuestion = userQueryTextarea.value.trim();
+
+            if (!userQuestion) {
+                aiResponseElement.textContent = "Por favor, escribe tu consulta antes de enviarla.";
+                aiResponseContainer.classList.add('visible');
+                // Limpiar mensaje de error después de un tiempo
+                setTimeout(() => {
+                    if (aiResponseElement.textContent === "Por favor, escribe tu consulta antes de enviarla.") {
+                         aiResponseElement.textContent = "";
+                         aiResponseContainer.classList.remove('visible');
+                    }
+                }, 3000);
+                return;
+            }
+
+            aiResponseElement.textContent = '';
+            loadingSpinner.style.display = 'block';
+            aiResponseContainer.classList.add('visible');
+            submitQueryButton.disabled = true;
+
+            // Mensaje del sistema para guiar a la IA
+            const systemPrompt = "Actúa como un terapeuta emocional compasivo, sabio y profesional. Tu objetivo es ofrecer apoyo y perspectiva, no diagnósticos ni soluciones definitivas. Mantén un tono cálido y respetuoso. Si la pregunta sugiere una crisis grave o la necesidad de ayuda profesional especializada, anima gentilmente al usuario a buscarla. No te presentes como una IA, simplemente responde como el terapeuta descrito.";
+            const fullPrompt = `${systemPrompt} Un usuario te ha hecho la siguiente pregunta sobre su salud emocional: "${userQuestion}". Por favor, ofrece una respuesta reflexiva, empática y útil en 2-5 frases.`;
+
+
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // La clave API será inyectada por el entorno
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Error desde la API:", errorData);
+                    throw new Error(`Error de API: ${response.status} ${response.statusText}. Detalles: ${JSON.stringify(errorData.error?.message || errorData)}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    aiResponseElement.textContent = text;
+                } else {
+                    console.error("Respuesta inesperada de la API:", result);
+                    aiResponseElement.innerHTML = "<p class='error-message'>No se pudo obtener una respuesta en este momento. Por favor, intenta de nuevo más tarde.</p>";
+                }
+            } catch (error) {
+                console.error('Error al contactar la API de Gemini:', error);
+                aiResponseElement.innerHTML = `<p class='error-message'>Error al obtener la respuesta: ${error.message}. Por favor, revisa la consola para más detalles.</p>`;
+            } finally {
+                loadingSpinner.style.display = 'none';
+                submitQueryButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
