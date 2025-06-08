@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tus Palabras Urgentes - Apoyo Emocional</title>
+    <title>Tus Palabras Urgentes - Apoyo Emocional con OpenAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -162,56 +162,45 @@
                 // Limpiar mensaje de error después de un tiempo
                 setTimeout(() => {
                     if (aiResponseElement.textContent === "Por favor, escribe tu consulta antes de enviarla.") {
-                         aiResponseElement.textContent = "";
-                         aiResponseContainer.classList.remove('visible');
+                        aiResponseElement.textContent = "";
+                        aiResponseContainer.classList.remove('visible');
                     }
                 }, 3000);
                 return;
             }
 
+            // --- UI Changes for Loading State ---
             aiResponseElement.textContent = '';
-            loadingSpinner.style.display = 'block';
             aiResponseContainer.classList.add('visible');
+            loadingSpinner.style.display = 'block';
             submitQueryButton.disabled = true;
 
-            // Mensaje del sistema para guiar a la IA
-            const systemPrompt = "Actúa como un terapeuta emocional compasivo, sabio y profesional. Tu objetivo es ofrecer apoyo y perspectiva, no diagnósticos ni soluciones definitivas. Mantén un tono cálido y respetuoso. Si la pregunta sugiere una crisis grave o la necesidad de ayuda profesional especializada, anima gentilmente al usuario a buscarla. No te presentes como una IA, simplemente responde como el terapeuta descrito.";
-            const fullPrompt = `${systemPrompt} Un usuario te ha hecho la siguiente pregunta sobre su salud emocional: "${userQuestion}". Por favor, ofrece una respuesta reflexiva, empática y útil en 2-5 frases.`;
-
-
             try {
-                let chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
-                const payload = { contents: chatHistory };
-                const apiKey = ""; // La clave API será inyectada por el entorno
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(apiUrl, {
+                // --- Call our own backend endpoint ---
+                // This endpoint will securely call the OpenAI API.
+                const response = await fetch('/api/openai', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: userQuestion }),
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error("Error desde la API:", errorData);
-                    throw new Error(`Error de API: ${response.status} ${response.statusText}. Detalles: ${JSON.stringify(errorData.error?.message || errorData)}`);
+                    throw new Error(errorData.message || 'Ocurrió un error en el servidor.');
                 }
 
                 const result = await response.json();
+                
+                // The backend sends back the AI's reply directly.
+                aiResponseElement.textContent = result.reply;
 
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    aiResponseElement.textContent = text;
-                } else {
-                    console.error("Respuesta inesperada de la API:", result);
-                    aiResponseElement.innerHTML = "<p class='error-message'>No se pudo obtener una respuesta en este momento. Por favor, intenta de nuevo más tarde.</p>";
-                }
             } catch (error) {
-                console.error('Error al contactar la API de Gemini:', error);
+                console.error('Error al contactar el backend:', error);
                 aiResponseElement.innerHTML = `<p class='error-message'>Error al obtener la respuesta: ${error.message}. Por favor, revisa la consola para más detalles.</p>`;
             } finally {
+                // --- Reset UI after completion ---
                 loadingSpinner.style.display = 'none';
                 submitQueryButton.disabled = false;
             }
