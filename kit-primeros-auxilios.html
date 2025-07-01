@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kit de Primeros Auxilios Emocionales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f5f1; /* crema muy claro */
+            color: #3f3f46; /* gris oscuro */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            overflow-x: hidden;
+        }
+        .slide-container {
+            background-color: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            width: 90%;
+            max-width: 700px;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+            position: relative;
+        }
+        .slide-container.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .slide-content > div:not(.openai-response-container) {
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .slide-container.active .slide-content > div:not(.openai-response-container) {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .slide-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #5d3f6a; /* morado oscuro */
+            margin-bottom: 1rem;
+        }
+        .slide-subtitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #8364a9; /* lila */
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .slide-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #3f3f46; /* gris oscuro */
+        }
+        .nav-button, .openai-button {
+            background-color: #8364a9; /* lila */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 0.5rem;
+        }
+        .openai-button {
+            background-color: #cfa7e3; /* lila pastel */
+            color: #3f3f46;
+        }
+        .openai-button:hover {
+            background-color: #d9b5ec;
+            transform: translateY(-2px);
+        }
+        .nav-button:hover {
+            background-color: #72539c;
+            transform: translateY(-2px);
+        }
+        .nav-button:disabled, .openai-button:disabled {
+            background-color: #a8a8b3;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            width: 100%;
+            align-items: center;
+        }
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        .dot {
+            height: 12px;
+            width: 12px;
+            margin: 0 5px;
+            background-color: #d1d5db;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .dot.active {
+            background-color: #8364a9;
+        }
+        .slide-number {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 0.875rem;
+            color: #737373;
+        }
+        .main-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #5d3f6a;
+            text-align: center;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+        .openai-response-container {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f1e6f7;
+            border-radius: 0.5rem;
+            border: 1px solid #e5d5f1;
+            min-height: 80px;
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out, display 0s 0.5s;
+        }
+        .openai-response-container.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .openai-response-container p {
+            color: #5d3f6a;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: #8364a9;
+            animation: spin 1s ease infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <img src="Logo-Animik.png" alt="Logo Animika" class="mx-auto w-32 mb-4" />
+    <h1 class="main-title">Kit de Primeros Auxilios Emocionales: Hábitos Diarios Esenciales</h1>
+
+    <div id="presentationContainer" class="w-full max-w-3xl">
+        <div id="slide" class="slide-container">
+            <div id="slideNumber" class="slide-number"></div>
+            <div id="slideContent" class="slide-content">
+                <h2 id="habitTitle" class="slide-title"></h2>
+                <div>
+                    <h3 class="slide-subtitle">¿Por Qué Es Importante?</h3>
+                    <p id="habitImportance" class="slide-text"></p>
+                </div>
+                <div>
+                    <h3 class="slide-subtitle">Ejemplo Práctico Diario</h3>
+                    <p id="habitExample" class="slide-text"></p>
+                </div>
+                <div class="openai-response-container" id="openaiResponseContainer">
+                    <div id="openaiLoading" class="loading-spinner" style="display: none;"></div>
+                    <p id="openaiResponse"></p>
+                </div>
+            </div>
+            <div id="controlsContainer" class="mt-auto">
+                 <button id="openaiButton" class="openai-button w-full sm:w-auto">✨ Inspiración Adicional</button>
+                <div id="navigation" class="nav-container mt-4">
+                    <button id="prevButton" class="nav-button">Anterior</button>
+                    <button id="nextButton" class="nav-button">Siguiente</button>
+                </div>
+            </div>
+        </div>
+        <div id="progressDots" class="progress-dots"></div>
+    </div>
+
+    <script>
+        const habitsData = [
+            {
+                title: "Movimiento Consciente (Ejercicio)",
+                importance: "Libera endorfinas, reduce el estrés, mejora el ánimo y la salud física general.",
+                example: "Caminar 30 minutos, bailar una canción favorita, hacer estiramientos por la mañana."
+            },
+            {
+                title: "Descanso Reparador (Sueño)",
+                importance: "Esencial para la regulación emocional, la consolidación de la memoria y la restauración física y mental.",
+                example: "Establecer un horario regular para acostarse y levantarse, crear un ambiente oscuro y tranquilo, evitar pantallas antes de dormir."
+            },
+            {
+                title: "Nutrición para el Ánimo (Alimentación)",
+                importance: "Proporciona los nutrientes necesarios para el funcionamiento óptimo del cerebro y la estabilidad emocional.",
+                example: "Incluir frutas, verduras, granos integrales y proteínas magras; mantenerse hidratado."
+            },
+            {
+                title: "Conexión Significativa (Relaciones)",
+                importance: "Brinda apoyo emocional, sentido de pertenencia y reduce sentimientos de soledad.",
+                example: "Llamar a un amigo, tener una conversación significativa con un familiar, participar en una actividad grupal."
+            },
+            {
+                title: "Pausa Reflexiva (Mindfulness/Gratitud)",
+                importance: "Aumenta la autoconciencia, reduce el estrés, fomenta una perspectiva positiva y la apreciación del presente.",
+                example: "Dedicar 5 minutos a meditar, escribir tres cosas por las que se está agradecido, practicar la respiración consciente."
+            }
+        ];
+
+        let currentSlideIndex = 0;
+
+        const slideElement = document.getElementById('slide');
+        const habitTitleElement = document.getElementById('habitTitle');
+        const habitImportanceElement = document.getElementById('habitImportance');
+        const habitExampleElement = document.getElementById('habitExample');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressDotsContainer = document.getElementById('progressDots');
+        const slideNumberElement = document.getElementById('slideNumber');
+
+        const openaiButton = document.getElementById('openaiButton');
+        const openaiResponseContainer = document.getElementById('openaiResponseContainer');
+        const openaiResponseElement = document.getElementById('openaiResponse');
+        const openaiLoadingElement = document.getElementById('openaiLoading');
+
+        function createProgressDots() {
+            progressDotsContainer.innerHTML = '';
+            habitsData.forEach((_, index) => {
+                const dot = document.createElement('span');
+                dot.classList.add('dot');
+                dot.addEventListener('click', () => goToSlide(index));
+                progressDotsContainer.appendChild(dot);
+            });
+        }
+
+        function updateProgressDots() {
+            const dots = progressDotsContainer.children;
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.toggle('active', i === currentSlideIndex);
+            }
+        }
+
+        function showSlide(index) {
+            slideElement.classList.remove('active');
+            openaiResponseContainer.classList.remove('visible');
+            openaiResponseElement.textContent = '';
+
+            setTimeout(() => {
+                const habit = habitsData[index];
+                habitTitleElement.textContent = habit.title;
+                habitImportanceElement.textContent = habit.importance;
+                habitExampleElement.textContent = habit.example;
+                slideNumberElement.textContent = `${index + 1} / ${habitsData.length}`;
+                slideElement.style.display = 'flex';
+                slideElement.classList.add('active');
+                updateButtonStates();
+                updateProgressDots();
+                openaiButton.disabled = false;
+            }, 350);
+        }
+
+        function updateButtonStates() {
+            prevButton.disabled = currentSlideIndex === 0;
+            nextButton.disabled = currentSlideIndex === habitsData.length - 1;
+        }
+
+        function goToSlide(index) {
+            if (index >= 0 && index < habitsData.length) {
+                currentSlideIndex = index;
+                showSlide(currentSlideIndex);
+            }
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                showSlide(currentSlideIndex);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentSlideIndex < habitsData.length - 1) {
+                currentSlideIndex++;
+                showSlide(currentSlideIndex);
+            }
+        });
+
+        openaiButton.addEventListener('click', async () => {
+            const currentHabit = habitsData[currentSlideIndex];
+            const prompt = `Estoy aprendiendo sobre la importancia de '${currentHabit.title}' para mi bienestar emocional, que es '${currentHabit.importance}'. Por favor, dame un breve párrafo (2-3 frases) de inspiración adicional o un consejo práctico y conciso para incorporar este hábito en mi vida diaria.`;
+
+            openaiResponseElement.textContent = '';
+            openaiLoadingElement.style.display = 'block';
+            openaiResponseContainer.classList.add('visible');
+            openaiButton.disabled = true;
+
+            try {
+                const payload = {
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        { role: 'user', content: prompt }
+                    ],
+                    max_tokens: 60,
+                    temperature: 0.7
+                };
+
+                const apiKey = '';
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error from API:', errorData);
+                    throw new Error(`Error de API: ${response.status} ${response.statusText}.`);
+                }
+
+                const result = await response.json();
+                const text = result.choices?.[0]?.message?.content?.trim();
+                if (text) {
+                    openaiResponseElement.textContent = text;
+                } else {
+                    openaiResponseElement.textContent = 'No se pudo obtener inspiración en este momento. Intenta de nuevo más tarde.';
+                }
+            } catch (error) {
+                console.error('Error al contactar la API de OpenAI:', error);
+                openaiResponseElement.textContent = `Error al obtener inspiración: ${error.message}.`;
+            } finally {
+                openaiLoadingElement.style.display = 'none';
+                openaiButton.disabled = false;
+            }
+        });
+
+        createProgressDots();
+        showSlide(currentSlideIndex);
+    </script>
+</body>
+</html>
