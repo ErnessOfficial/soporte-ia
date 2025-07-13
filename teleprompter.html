@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teleprompter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #111827; color: #f3f4f6; font-family: sans-serif; }
+        #teleprompterContainer { height: 80vh; overflow: hidden; position: relative; }
+        #teleprompterText { white-space: pre-wrap; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="p-4">
+    <div id="configPanel" class="space-y-4 max-w-xl mx-auto">
+        <h1 class="text-2xl font-bold text-center mb-4">Teleprompter</h1>
+        <textarea id="scriptInput" class="w-full h-40 p-2 rounded text-black" placeholder="Pega tu texto aquí..."></textarea>
+        <div class="flex space-x-4">
+            <label class="flex-1">Tamaño de fuente
+                <input type="number" id="fontSize" value="32" class="w-full text-black p-1 rounded" />
+            </label>
+            <label class="flex-1">Velocidad (px/s)
+                <input type="number" id="speed" value="40" class="w-full text-black p-1 rounded" />
+            </label>
+        </div>
+        <div class="flex space-x-4">
+            <label class="flex-1">Color de texto
+                <input type="color" id="textColor" value="#ffffff" class="w-full h-10 p-1" />
+            </label>
+            <label class="flex-1">Color de fondo
+                <input type="color" id="bgColor" value="#111827" class="w-full h-10 p-1" />
+            </label>
+        </div>
+        <div class="flex space-x-2 justify-center">
+            <button id="startBtn" class="px-4 py-2 bg-green-500 rounded">Iniciar</button>
+            <button id="pauseBtn" class="px-4 py-2 bg-yellow-500 rounded" disabled>Pausar</button>
+            <button id="resumeBtn" class="px-4 py-2 bg-blue-500 rounded hidden">Reanudar</button>
+        </div>
+    </div>
+
+    <div id="teleprompterContainer" class="hidden mt-4 p-4" style="background-color:#111827; color:white;">
+        <div id="teleprompterText"></div>
+    </div>
+
+    <script>
+        const scriptInput = document.getElementById('scriptInput');
+        const fontSizeInput = document.getElementById('fontSize');
+        const speedInput = document.getElementById('speed');
+        const textColorInput = document.getElementById('textColor');
+        const bgColorInput = document.getElementById('bgColor');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const container = document.getElementById('teleprompterContainer');
+        const textEl = document.getElementById('teleprompterText');
+
+        let scrolling = false;
+        let lastTime = 0;
+        let speed = 40;
+
+        function step(ts) {
+            if (!scrolling) return;
+            if (!lastTime) lastTime = ts;
+            const delta = ts - lastTime;
+            container.scrollTop += (speed / 1000) * delta;
+            lastTime = ts;
+            if (container.scrollTop < textEl.offsetHeight - container.clientHeight) {
+                requestAnimationFrame(step);
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            textEl.style.fontSize = fontSizeInput.value + 'px';
+            textEl.style.color = textColorInput.value;
+            container.style.backgroundColor = bgColorInput.value;
+            container.style.color = textColorInput.value;
+            speed = parseFloat(speedInput.value);
+            textEl.textContent = scriptInput.value;
+            container.classList.remove('hidden');
+            document.getElementById('configPanel').classList.add('hidden');
+            scrolling = true;
+            requestAnimationFrame(step);
+            pauseBtn.disabled = false;
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            scrolling = false;
+            pauseBtn.disabled = true;
+            resumeBtn.classList.remove('hidden');
+        });
+
+        resumeBtn.addEventListener('click', () => {
+            scrolling = true;
+            lastTime = 0;
+            requestAnimationFrame(step);
+            resumeBtn.classList.add('hidden');
+            pauseBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
